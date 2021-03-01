@@ -19,10 +19,12 @@ echo
 echo 'Autoremove Unsed Packages ...'; sleep 1
 sudo apt autoremove -y
 sudo apt autoremove --purge -y
-echo 
+echo
+#limpando o repositório local. 
 echo 'Cleaning Local Repository...'; sleep 1
 sudo apt autoclean
 echo 
+#limpeza geral de cache, temps...
 echo 'General Cleaning of the system...'; sleep 1
 sudo rm -vfr ~/.thumbnails/normal/*
 sleep 1
