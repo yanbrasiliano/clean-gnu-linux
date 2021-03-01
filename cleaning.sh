@@ -4,7 +4,7 @@
 #Autor:			Yan B.S.Penalva <yanpenabr@gmail.com>
 #
 #------------------------------------------------------
-#
+#VERSION 1.0 - Iniciando a primeira versão do script, com alguns comandos automatizando a limpeza e atualização do  sistema.
 #
 
 #Atualizar repositórios.
