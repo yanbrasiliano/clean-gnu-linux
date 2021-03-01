@@ -1,4 +1,4 @@
-<div><h2> Clean GNU/Linux - A script to replace cleaning software 🧹 </h2>
+<div><h2> Clean GNU/Linux - Automating tasks 🧹 </h2>
 <p>This script automates some tasks for Linux distributions based on Debian; these functions are for cleaning the S.O </p>
 <br>
 <h3>Step by step to use</h3>
