@@ -5,7 +5,7 @@
 #
 #------------------------------------------------------
 #VERSION 1.0 - Iniciando a primeira versão do script, com alguns comandos automatizando a limpeza e atualização do  sistema.
-#
+#Testado no ZSH/BASH
 
 #Atualizar repositórios.
 echo 'Update System...'; sleep 1
