@@ -2,8 +2,10 @@
 #
 #cleaning.sh - script para automaitizar a limpeza de cache,logs e arquivos no GNU-LINUX.
 #Autor:			Yan B.S.Penalva <yanpenabr@gmail.com>
+#Site:			hellolibre.blogspot.com
 #
 #------------------------------------------------------
+#
 #VERSION 1.0 - Iniciando a primeira versão do script, com alguns comandos automatizando a limpeza e atualização do  sistema.
 #Testado no ZSH/BASH
 
