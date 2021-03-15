@@ -1,32 +1,52 @@
 #/usr/bin/env bash
 #
-#cleaning.sh - script para automaitizar a limpeza de cache,logs e arquivos no GNU-LINUX.
-#Autor:			Yan B.S.Penalva <yanpenabr@gmail.com>
-#Site:			hellolibre.blogspot.com
+#	cleaning.sh:		script to automate the cleaning of cache, logs and files on GNU-LINUX.
+#	Autor:					Yan B.S.Penalva <yanpenabr@gmail.com>
+#	Site:						hellolibre.blogspot.com
+#	Maintenance: 		Yan Brasiliano Silva Penalva <yanpenabr@gmail.com>
 #
-#------------------------------------------------------
+#----------------------------------------------------------------------
+#	Automate commands for cleaning and updating the system. 
 #
-#VERSION 1.0 - Iniciando a primeira versão do script, com alguns comandos automatizando a limpeza e atualização do  sistema.
-#Testado no ZSH/BASH
+#	
+#
+#	Example of use:
+#		$ ./cleaning.sh
+#	
+#
+#----------------------------------------------------------------------
+#	Historic:	
+#
+#	v1.0 2021.03.08, Yan Brasiliano:
+#	- 	Initial version of the program, inserting functions and header. 
+#
+#
+#	----------------------------------------------------------------------
+#	Tested:
+# BASH 5.0.3
+#	ZSH 5.7.1
+#
+# License: GNU General Public License	
+#	----------------------------------------------------------------------
 
-#Atualizar repositórios.
+#Update repositories. 
 echo 'Update System...'; sleep 1
 sudo apt update
 echo
-#Upgrade nos pacotes que forem solicitados.
+#Upgrade the packages that are requested. 
 echo 'Upgrade System...'; sleep 1
 sudo apt upgrade
 echo 
-#Remover libs e pacotes obseletos e não mais utilizados.
+#Remove obsolete and no longer used libs and packages. 
 echo 'Autoremove Unsed Packages ...'; sleep 1
 sudo apt autoremove -y
 sudo apt autoremove --purge -y
 echo
-#limpando o repositório local. 
+#cleaning up the local repository. 
 echo 'Cleaning Local Repository...'; sleep 1
 sudo apt autoclean
 echo 
-#limpeza geral de cache, temps...
+#general cache clearing, temps, etc.
 echo 'General Cleaning of the system...'; sleep 1
 sudo rm -vfr ~/.thumbnails/normal/*
 sleep 1
