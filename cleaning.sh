@@ -32,12 +32,12 @@
 
 #Update repositories. 
 echo 'Update System...'; sleep 1
-sudo apt update
+sudo apt update -y
 echo
 #Upgrade the packages that are requested. 
 echo 'Upgrade System...'; sleep 1
-sudo apt upgrade
-sudo apt full-upgrade
+sudo apt upgrade -y
+sudo apt full-upgrade -y
 echo 
 #Remove obsolete and no longer used libs and packages. 
 echo 'Autoremove Unsed Packages ...'; sleep 1
