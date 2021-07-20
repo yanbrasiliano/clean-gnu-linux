@@ -71,8 +71,6 @@ echo
 sleep 1
 sudo rm -rf /var/tmp/*
 sudo du -sh /var/tmp/*
-sudo rm -rf /var/tmp/*
-sudo du -sh /var/tmp/
 echo
 sleep 1
 sudo rm -rf "${HOME}/.local/share/Trash/"*
@@ -84,7 +82,7 @@ sleep 1
 sudo dpkg --configure -a
 echo
 echo "Cleaning /var/log old logs"
-cd /var/log/
+sudo rm -rf /var/log/*
 sleep 1
 sudo find | sudo grep gz$|sudo xargs rm -rf 
 sudo find | sudo grep 1$|sudo xargs rm -rf 
