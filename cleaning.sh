@@ -6,13 +6,16 @@ export PATH=$PATH:/home/blackowl
 LOG_FILE="/home/blackowl/update.log"
 REDIRECT_LOG_FILE="1>> $LOG_FILE 2>&1"
 
+# ------- FUNCTIONS -------
+
 preparelogfile () {
-  # Insert a simple header to the log file with the timestamp
-  echo "----------[ $(date) ]----------" >> $LOG_FILE
+
+  # Insert a simple header to the log file with the 
+	  echo "----------[ $(whoami) $(date) ]----------" >> $LOG_FILE
+
 }
 
-preparelogfile
-
+updatesystem () {
 #Update repositories. 
 echo 'Update System...'; sleep 1
 sudo apt update -y
@@ -82,6 +85,17 @@ echo "Cleaning cache /home"
 sudo rm -rf ~/.cache/*
 sudo du -sh ~/.cache/
 sleep 2
-echo
-echo "Cleaning finished :D"
+}
 
+main () {
+	preparelogfile
+	updatesystem
+}
+
+# ------------------------------
+
+# ----- EXECUTION ---- #
+
+main
+
+# -------------------- #
