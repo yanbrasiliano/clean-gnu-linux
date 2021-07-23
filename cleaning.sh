@@ -1,34 +1,17 @@
 #/usr/bin/env bash
-#
-#	cleaning.sh:		script to automate the cleaning of cache, logs and files on GNU-LINUX.
-#	Autor:					Yan B.S.Penalva <yanpenabr@gmail.com>
-#	Site:						hellolibre.blogspot.com
-#	Maintenance: 		Yan Brasiliano Silva Penalva <yanpenabr@gmail.com>
-#
-#----------------------------------------------------------------------
-#	Automate commands for cleaning and updating the system. 
-#
-#	
-#
-#	Example of use:
-#		$ ./cleaning.sh
-#	
-#
-#----------------------------------------------------------------------
-#	Historic:	
-#
-#	v1.0 2021.03.08, Yan Brasiliano:
-#	- 	Initial version of the program, inserting functions and header. 
-#	
-#	V1.1 2021.06.02, Yan Brasiliano: 
-#	- 	Adding new features for cleaning. 
-#	----------------------------------------------------------------------
-#	Tested:
-# BASH 5.0.3
-#	ZSH 5.7.1
-#
-# License: GNU General Public License	
-#	----------------------------------------------------------------------
+
+
+export PATH=$PATH:/home/blackowl
+
+LOG_FILE="/home/blackowl/update.log"
+REDIRECT_LOG_FILE="1>> $LOG_FILE 2>&1"
+
+preparelogfile () {
+  # Insert a simple header to the log file with the timestamp
+  echo "----------[ $(date) ]----------" >> $LOG_FILE
+}
+
+preparelogfile
 
 #Update repositories. 
 echo 'Update System...'; sleep 1
