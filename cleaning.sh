@@ -42,7 +42,6 @@ echo
 #Remove obsolete and no longer used libs and packages. 
 echo 'Autoremove Unsed Packages ...'; sleep 1
 sudo apt autoremove -y
-sudo apt autoremove --purge -y
 echo
 #cleaning up the local repository. 
 echo 'Cleaning Local Repository...'; sleep 1
