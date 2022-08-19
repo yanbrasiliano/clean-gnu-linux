@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 
-export PATH=$PATH:/home/blackowl
+export PATH=$PATH:/home/${USER}
 
-LOG_FILE="/home/blackowl/update.log"
+LOG_FILE="/home/${USER}/update.log"
 REDIRECT_LOG_FILE="1>> $LOG_FILE 2>&1"
 
 # ------- FUNCTIONS -------
