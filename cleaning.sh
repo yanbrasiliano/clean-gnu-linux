@@ -1,101 +1,101 @@
-#!/usr/bin/env bash
+#!/usr/bin/env bash -e
 
+# Define variables
+LOG_FILE="$HOME/update.log"
+THUMBNAILS_DIR="$HOME/.thumbnails/normal"
+SLEEP_TIME=1
 
-export PATH=$PATH:/home/${USER}
-
-LOG_FILE="/home/${USER}/update.log"
-REDIRECT_LOG_FILE="1>> $LOG_FILE 2>&1"
-
-# ------- FUNCTIONS -------
-
-preparelogfile () {
-
-  # Insert a simple header to the log file with the 
-	  echo "----------[ $(whoami) $(date) ]----------" >> $LOG_FILE
-
+prepare_logfile () {
+  echo "----------[ $(whoami) $(date) ]----------" >> "$LOG_FILE"
 }
 
-updatesystem () {
-#Update repositories. 
-echo 'Update System...'; sleep 1
-sudo apt update -y
-echo
-#Upgrade the packages that are requested. 
-echo 'Upgrade System...'; sleep 1
-sudo apt upgrade -y
-sudo apt full-upgrade -y
-echo 
-#Remove obsolete and no longer used libs and packages. 
-echo 'Autoremove Unsed Packages ...'; sleep 1
-sudo apt autoremove -y
-echo
-#cleaning up the local repository. 
-echo 'Cleaning Local Repository...'; sleep 1
-sudo apt autoclean
-echo 
-#general cache clearing, temps, etc.
-echo 'General Cleaning of the system...'; sleep 1
-sudo rm -rf ~/.thumbnails/normal/*
-sudo du -sh ~/.thumbnails/normal/*
-echo
-sleep 1
-sudo rm -rf /var/cache/apt/archives/
-sudo du -sh /var/cache/apt/archives/
-echo
-sleep 1
-sudo rm -rf /var/cache/apt/archives/*deb
-sudo du -sh /var/cache/apt/archives/*deb
-echo
-sleep 1
-sudo rm -f ~/.cache/thumbnails/normal/*
-sudo du -sh ~/.cache/thumbnails/normal/*
-echo
-sleep 1
-sudo apt clean
-echo
-sleep 1
-sudo rm -rf /var/tmp/*
-sudo du -sh /var/tmp/*
-echo
-sleep 1
-sudo rm -rf "${HOME}/.local/share/Trash/"*
-sudo du -sh "${HOME}/.local/share/Trash/"*
-echo
-sleep 1
-echo "Fixing broken packages with dpkg!"
-sleep 1
-sudo dpkg --configure -a
-echo
-echo "Cleaning /var/log old logs"
-sudo rm -rf /var/log/*
-sleep 1
-sudo find | sudo grep gz$|sudo xargs rm -rf 
-sudo find | sudo grep 1$|sudo xargs rm -rf 
-sudo find | sudo grep old$|sudo xargs rm -rf
-sudo du -sh /var/log
-sleep 2 
-echo
-echo "Cleaning old backups" 
-sudo rm -rf /var/backups/*gz
-sudo du -sh /var/backups/
-echo 
-sleep 2
-echo
-echo "Cleaning cache /home"
-sudo rm -rf ~/.cache/*
-sudo du -sh ~/.cache/
-sleep 2
+update_system () {
+  echo 'Updating system...'
+  sudo apt update -y
+  echo 'Upgrading packages...'
+  sudo apt upgrade -y
+  sudo apt full-upgrade -y
+  echo 'Removing unused packages...'
+  sudo apt autoremove -y
+  echo 'Cleaning local repository...'
+  sudo apt autoclean
+
+  echo 'Cleaning system...'
+  sudo rm -rf "$THUMBNAILS_DIR"/*
+  sudo du -sh "$THUMBNAILS_DIR"
+  sleep "$SLEEP_TIME"
+
+  sudo rm -rf /var/cache/apt/archives/
+  sudo du -sh /var/cache/apt/archives/
+  sleep "$SLEEP_TIME"
+
+  sudo rm -rf /var/cache/apt/archives/*deb
+  sudo du -sh /var/cache/apt/archives/*deb
+  sleep "$SLEEP_TIME"
+
+  sudo rm -f ~/.cache/thumbnails/normal/*
+  sudo du -sh ~/.cache/thumbnails/normal/*
+  sleep "$SLEEP_TIME"
+
+  sudo apt clean
+  sleep "$SLEEP_TIME"
+
+  sudo rm -rf /var/tmp/*
+  sudo du -sh /var/tmp/*
+  sleep "$SLEEP_TIME"
+
+  sudo rm -rf "$HOME/.local/share/Trash/"*
+  sudo du -sh "$HOME/.local/share/Trash/"*
+  sleep "$SLEEP_TIME"
+
+  echo 'Fixing broken packages with dpkg...'
+  sudo dpkg --configure -a
+
+  echo 'Cleaning old logs in /var/log...'
+  sudo journalctl --vacuum-size=50M
+  sudo rm -rf /var/log/*gz /var/log/*1 /var/log/*old*
+  sudo du -sh /var/log
+  sleep "$SLEEP_TIME"
+
+  echo 'Cleaning old backups in /var/backups...'
+  sudo rm -rf /var/backups/*gz
+  sudo du -sh /var/backups/
+  sleep "$SLEEP_TIME"
+
+  echo 'Cleaning cache in /home...'
+  sudo rm -rf ~/.cache/*
+  sudo du -sh ~/.cache/
+  sleep "$SLEEP_TIME"
+
+  echo 'Removing old kernels...'
+  sudo apt-get remove --purge -y $(dpkg --list | grep linux-image | awk '{ print $2 }' | sort -V | sed -n '/'`uname -r`'/q;p')
+  sleep "$SLEEP_TIME"
+
+  echo 'Removing old configuration files...'
+  sudo dpkg -l | grep '^rc' | awk '{print $2}' | xargs sudo dpkg --purge
+  sleep "$SLEEP_TIME"
+
+  echo 'Removing unnecessary files from home directory...'
+  rm -rf ~/Downloads/*
+  rm -rf ~/.cache/*
+  rm -rf ~/.local/share/Trash/*
+  rm -rf ~/.thumbnails/*
+  sleep "$SLEEP_TIME"
+  
+  # Remove old snaps
+  set -eu
+  snap list --all | awk '/disabled/{print $1, $3}' |
+    while read snapname revision; do
+        sudo snap remove "$snapname" --revision="$revision"
+    done
+    
+  # List all partitions size
+  df -Th | sort
 }
 
 main () {
-	preparelogfile
-	updatesystem
+  prepare_logfile
+  update_system
 }
 
-# ------------------------------
-
-# ----- EXECUTION ---- #
-
 main
-
-# -------------------- #
