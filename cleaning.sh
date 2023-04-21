@@ -5,6 +5,13 @@ LOG_FILE="$HOME/update.log"
 THUMBNAILS_DIR="$HOME/.thumbnails/normal"
 SLEEP_TIME=1
 
+# Check for root privileges
+if [ "$(id -u)" -ne 0 ]; then
+    echo "This script must be run as root."
+    exit 1
+fi
+
+
 prepare_logfile () {
   echo "----------[ $(whoami) $(date) ]----------" >> "$LOG_FILE"
 }
@@ -16,7 +23,7 @@ update_system () {
   sudo apt upgrade -y
   sudo apt full-upgrade -y
   echo 'Removing unused packages...'
-  sudo apt autoremove -y
+  sudo apt autoremove --purge -y
   echo 'Cleaning local repository...'
   sudo apt autoclean
 
@@ -68,7 +75,7 @@ update_system () {
   sleep "$SLEEP_TIME"
 
   echo 'Removing old kernels...'
-  sudo apt-get remove --purge -y $(dpkg --list | grep linux-image | awk '{ print $2 }' | sort -V | sed -n '/'`uname -r`'/q;p')
+  sudo apt remove --purge -y $(dpkg --list | grep linux-image | awk '{ print $2 }' | sort -V | sed -n '/'`uname -r`'/q;p')
   sleep "$SLEEP_TIME"
 
   echo 'Removing old configuration files...'
