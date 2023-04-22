@@ -1,4 +1,4 @@
-#!/usr/bin/env bash -e
+#!/usr/bin/env bash
 
 # Define variables
 LOG_FILE="$HOME/update.log"
