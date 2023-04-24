@@ -78,7 +78,7 @@ update_system () {
   sleep "$SLEEP_TIME"
 
   echo 'Removing old configuration files...'
-  sudo dpkg -l | grep '^rc' | awk '{print $2}' | xargs sudo dpkg --purge
+  sudo dpkg -l | grep '^rc' | awk '{print $2}' | xargs -r sudo dpkg --purge
   sleep "$SLEEP_TIME"
 
   echo 'Removing unnecessary files from home directory...'
