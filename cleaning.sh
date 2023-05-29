@@ -49,6 +49,11 @@ update_system () {
   $JUMP_LINE
   sudo apt clean
   sleep "$SLEEP_TIME"
+  
+  $JUMP_LINE
+  echo 'Clear temporary files...'
+  sudo rm -rf /tmp/*
+  sleep "$SLEEP_TIME"
 
   $JUMP_LINE
   sudo rm -rf /var/tmp/*
