@@ -4,124 +4,86 @@
 LOG_FILE="$HOME/update.log"
 THUMBNAILS_DIR="$HOME/.thumbnails/normal"
 SLEEP_TIME=1
-JUMP_LINE=echo
 
-prepare_logfile () {
-  echo "----------[ $(whoami) $(date) ]----------" >> "$LOG_FILE"
+# Function to check for root permissions
+check_root() {
+  if [[ $EUID -ne 0 ]]; then
+    echo "This script must be run as root."
+    exit 1
+  fi
 }
 
-update_system () {
+# Function to log messages
+log_message() {
+  echo "----------[ $(whoami) $(date) ]----------" >>"$LOG_FILE"
+}
+
+# Function to clean directories
+clean_directory() {
+  local dir=$1
+  echo "Cleaning $dir..."
+  sudo rm -rf "${dir:?}"/* # The :? ensures that the variable is not empty
+  sudo du -sh "$dir"
+  sleep "$SLEEP_TIME"
+}
+
+# Function to update the system
+update_system() {
+  check_root
+  log_message
+
   echo 'Updating system...'
-  sudo apt update -y
-  $JUMP_LINE
+  if ! sudo apt update -y; then
+    echo "Failed to update package lists, exiting."
+    exit 1
+  fi
+
   echo 'Upgrading packages...'
   sudo apt upgrade -y
   sudo apt full-upgrade -y
-  $JUMP_LINE
+
   echo 'Removing unused packages...'
   sudo apt autoremove --purge -y
-  $JUMP_LINE
+
   echo 'Cleaning local repository...'
   sudo apt autoclean
-  
-  $JUMP_LINE
-  
-  echo 'Cleaning system...'
-  sudo rm -rf "$THUMBNAILS_DIR"/*
-  sudo du -sh "$THUMBNAILS_DIR"
-  sleep "$SLEEP_TIME"
-  
-  $JUMP_LINE
-  sudo rm -rf /var/cache/apt/archives/
-  sudo du -sh /var/cache/apt/archives/
-  sleep "$SLEEP_TIME"
-  
-  $JUMP_LINE
-  sudo rm -rf /var/cache/apt/archives/*deb
-  sudo du -sh /var/cache/apt/archives/*deb
-  sleep "$SLEEP_TIME"
 
-  $JUMP_LINE
-  sudo rm -f ~/.cache/thumbnails/normal/*
-  sudo du -sh ~/.cache/thumbnails/normal/*
-  sleep "$SLEEP_TIME"
-  
-  $JUMP_LINE
-  sudo apt clean
-  sleep "$SLEEP_TIME"
-  
-  $JUMP_LINE
-  echo 'Clear temporary files...'
-  sudo rm -rf /tmp/*
-  sleep "$SLEEP_TIME"
+  clean_directory "$THUMBNAILS_DIR"
+  clean_directory "/var/cache/apt/archives"
+  clean_directory "~/.cache/thumbnails/normal"
+  clean_directory "/var/tmp"
+  clean_directory "$HOME/.local/share/Trash"
+  clean_directory "/var/log"
+  clean_directory "/var/backups"
+  clean_directory "~/.cache"
 
-  $JUMP_LINE
-  sudo rm -rf /var/tmp/*
-  sudo du -sh /var/tmp/*
-  sleep "$SLEEP_TIME"
-
-  $JUMP_LINE
-  sudo rm -rf "$HOME/.local/share/Trash/"*
-  sudo du -sh "$HOME/.local/share/Trash/"*
-  sleep "$SLEEP_TIME"
-  
-  $JUMP_LINE
   echo 'Fixing broken packages with dpkg...'
   sudo dpkg --configure -a
 
-  $JUMP_LINE
-  echo 'Cleaning old logs in /var/log...'
+  echo 'Cleaning old logs...'
   sudo journalctl --vacuum-size=50M
-  sudo rm -rf /var/log/*gz /var/log/*1 /var/log/*old*
-  sudo du -sh /var/log
-  sleep "$SLEEP_TIME"
 
-  $JUMP_LINE
-  echo 'Cleaning old backups in /var/backups...'
-  sudo rm -rf /var/backups/*gz
-  sudo du -sh /var/backups/
-  sleep "$SLEEP_TIME"
-  
-  $JUMP_LINE
-  echo 'Cleaning cache in /home...'
-  sudo rm -rf ~/.cache/*
-  sudo du -sh ~/.cache/
-  sleep "$SLEEP_TIME"
-
-  $JUMP_LINE
   echo 'Removing old kernels...'
-  sudo apt remove --purge -y $(dpkg --list | grep linux-image | awk '{ print $2 }' | sort -V | sed -n '/'`uname -r`'/q;p')
-  sleep "$SLEEP_TIME"
+  # safer approach to remove old kernels
+  sudo apt autoremove --purge
 
-  $JUMP_LINE
   echo 'Removing old configuration files...'
   sudo dpkg -l | grep '^rc' | awk '{print $2}' | xargs -r sudo dpkg --purge
-  sleep "$SLEEP_TIME"
 
-  $JUMP_LINE
   echo 'Removing unnecessary files from home directory...'
-  rm -rf ~/Downloads/*
-  rm -rf ~/.cache/*
-  rm -rf ~/.local/share/Trash/*
-  rm -rf ~/.thumbnails/*
-  sleep "$SLEEP_TIME"
-  
-  $JUMP_LINE
+  clean_directory ~/Downloads
+
   # Remove old snaps
-  set -eu
   snap list --all | awk '/disabled/{print $1, $3}' |
-    while read snapname revision; do
-        sudo snap remove "$snapname" --revision="$revision"
+    while read -r snapname revision; do
+      sudo snap remove "$snapname" --revision="$revision"
     done
-    
-  $JUMP_LINE
-  $JUMP_LINE
+
   # List all partitions size
   df -Th | sort
 }
 
-main () {
-  prepare_logfile
+main() {
   update_system
 }
 
