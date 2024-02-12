@@ -1,90 +1,87 @@
 #!/usr/bin/env bash
 
+set -e
+
 # Define variables
 LOG_FILE="$HOME/update.log"
 THUMBNAILS_DIR="$HOME/.thumbnails/normal"
 SLEEP_TIME=1
 
-# Function to check for root permissions
-check_root() {
-  if [[ $EUID -ne 0 ]]; then
-    echo "This script must be run as root."
-    exit 1
-  fi
-}
+# Check for root permissions
+if [[ $EUID -ne 0 ]]; then
+  echo "This script must be run as root."
+  exit 1
+fi
 
-# Function to log messages
 log_message() {
-  echo "----------[ $(whoami) $(date) ]----------" >>"$LOG_FILE"
+  echo "----------[ $(whoami) $(date) ]----------" >> "${LOG_FILE}"
 }
 
-# Function to clean directories
 clean_directory() {
   local dir=$1
-  echo "Cleaning $dir..."
-  sudo rm -rf "${dir:?}"/* # The :? ensures that the variable is not empty
-  sudo du -sh "$dir"
-  sleep "$SLEEP_TIME"
+  if [ -d "${dir}" ]; then
+    echo "Cleaning ${dir}..."
+    rm -rf "${dir:?}"/*
+    du -sh "${dir}"
+    sleep "${SLEEP_TIME}"
+  else
+    echo "Directory ${dir} not found, skipping."
+  fi
 }
 
-# Function to update the system
-update_system() {
-  check_root
+apt_operations() {
   log_message
-
-  echo 'Updating system...'
-  if ! sudo apt update -y; then
-    echo "Failed to update package lists, exiting."
-    exit 1
-  fi
-
+  echo 'Updating package lists...'
+  apt update -y
   echo 'Upgrading packages...'
-  sudo apt upgrade -y
-  sudo apt full-upgrade -y
-
+  apt upgrade -y
+  apt full-upgrade -y
   echo 'Removing unused packages...'
-  sudo apt autoremove --purge -y
-
+  apt autoremove --purge -y
   echo 'Cleaning local repository...'
-  sudo apt autoclean
+  apt autoclean
+}
 
-  clean_directory "$THUMBNAILS_DIR"
+remove_old_kernels() {
+  echo 'Removing old kernels...'
+  apt autoremove --purge
+}
+
+remove_old_configs() {
+  echo 'Removing old configuration files...'
+  dpkg -l | grep '^rc' | awk '{print $2}' | xargs -r dpkg --purge
+}
+
+update_system() {
+  apt_operations
+  remove_old_kernels
+  remove_old_configs
+
+  clean_directory "${THUMBNAILS_DIR}"
   clean_directory "/var/cache/apt/archives"
-  clean_directory "~/.cache/thumbnails/normal"
+  clean_directory "$HOME/.cache/thumbnails/normal"
   clean_directory "/var/tmp"
   clean_directory "$HOME/.local/share/Trash"
   clean_directory "/var/log"
   clean_directory "/var/backups"
-  clean_directory "~/.cache"
+  clean_directory "$HOME/.cache"
+  clean_directory "$HOME/Downloads"
 
   echo 'Fixing broken packages with dpkg...'
-  sudo dpkg --configure -a
+  dpkg --configure -a
 
   echo 'Cleaning old logs...'
-  sudo journalctl --vacuum-size=50M
-
-  echo 'Removing old kernels...'
-  # safer approach to remove old kernels
-  sudo apt autoremove --purge
-
-  echo 'Removing old configuration files...'
-  sudo dpkg -l | grep '^rc' | awk '{print $2}' | xargs -r sudo dpkg --purge
-
-  echo 'Removing unnecessary files from home directory...'
-  clean_directory ~/Downloads
+  journalctl --vacuum-size=50M
 
   # Remove old snaps
+  echo 'Removing old snaps...'
   snap list --all | awk '/disabled/{print $1, $3}' |
     while read -r snapname revision; do
-      sudo snap remove "$snapname" --revision="$revision"
+      snap remove "$snapname" --revision="$revision"
     done
 
   # List all partitions size
   df -Th | sort
 }
 
-main() {
-  update_system
-}
-
-main
+update_system
