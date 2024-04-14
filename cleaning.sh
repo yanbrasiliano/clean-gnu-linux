@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -e
-trap 'echo "An error occurred. Exiting..." >&2' ERR
+trap 'echo "An error occurred. Exiting..." >&2; exit 1' ERR
 
 if [ "$SUDO_USER" ]; then
   REAL_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
@@ -11,6 +11,7 @@ fi
 
 LOG_FILE="$REAL_HOME/update.log"
 THUMBNAILS_DIR="$REAL_HOME/.thumbnails/normal"
+CACHE_DIR="$REAL_HOME/.cache"
 SLEEP_TIME=1
 
 [[ $EUID -eq 0 ]] || {
@@ -35,7 +36,7 @@ clean_directory() {
 }
 
 apt_operations() {
-  log_message
+  log_message "Starting APT operations"
   echo 'Updating package lists...'
   apt update -y
   echo 'Upgrading packages...'
@@ -43,7 +44,7 @@ apt_operations() {
   apt full-upgrade -y
   echo 'Removing unused packages...'
   apt autoremove --purge -y
-  echo 'Cleaning local repository...'
+  echo 'Cleaning local repository of packages...'
   apt autoclean
 }
 
@@ -65,7 +66,13 @@ update_system() {
   clean_directory "${THUMBNAILS_DIR}"
   clean_directory "$REAL_HOME/.cache/thumbnails/normal"
   clean_directory "$REAL_HOME/.local/share/Trash"
-  clean_directory "$REAL_HOME/.cache"
+
+  if ! pgrep -x "chrome" >/dev/null; then
+    clean_directory "${CACHE_DIR}"
+  else
+    echo "Google Chrome is running; skipping cache cleanup."
+  fi
+
   clean_directory "$REAL_HOME/Downloads"
   clean_directory "/var/cache/apt/archives"
   clean_directory "/var/tmp"
