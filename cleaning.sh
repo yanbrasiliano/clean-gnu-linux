@@ -50,12 +50,28 @@ apt_operations() {
 
 remove_old_kernels() {
   echo 'Removing old kernels...'
-  apt autoremove --purge
+  apt autoremove --purge -y
 }
 
 remove_old_configs() {
   echo 'Removing old configuration files...'
   dpkg -l | grep '^rc' | awk '{print $2}' | xargs -r dpkg --purge
+}
+
+clean_docker() {
+  echo 'Cleaning Docker...'
+  docker system prune -a -f --volumes
+}
+
+clean_journal() {
+  echo 'Cleaning journal logs...'
+  journalctl --vacuum-size=50M
+}
+
+clean_systemd_resolved() {
+  echo 'Cleaning systemd-resolved cache...'
+  rm -rf /var/cache/systemd/resolved
+  systemctl restart systemd-resolved
 }
 
 update_system() {
@@ -78,19 +94,16 @@ update_system() {
   clean_directory "/var/tmp"
   clean_directory "/var/log"
   clean_directory "/var/backups"
+  clean_directory "/root/.cache"
 
   [[ "$HOME" != "/root" ]] || clean_directory "/root"
 
   echo 'Fixing broken packages with dpkg...'
   dpkg --configure -a
   echo 'Cleaning old logs...'
-  journalctl --vacuum-size=50M
-  echo 'Removing old snaps...'
-  snap list --all | awk '/disabled/{print $1, $3}' |
-    while read -r snapname revision; do
-      snap remove "$snapname" --revision="$revision"
-    done
-
+  clean_journal
+  clean_docker
+  clean_systemd_resolved
   df -Th | sort
 }
 
