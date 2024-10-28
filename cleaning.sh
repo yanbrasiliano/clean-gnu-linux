@@ -3,6 +3,10 @@
 set -e
 trap 'echo "An error occurred. Exiting..." >&2; exit 1' ERR
 
+[[ $EUID -eq 0 ]] || {
+  echo "This script must be run as root." >&2
+  exit 1
+}
 if [ "$SUDO_USER" ]; then
   REAL_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
 else
@@ -10,101 +14,101 @@ else
 fi
 
 LOG_FILE="$REAL_HOME/update.log"
+ERROR_LOG="$REAL_HOME/update_errors.log"
 THUMBNAILS_DIR="$REAL_HOME/.thumbnails/normal"
 CACHE_DIR="$REAL_HOME/.cache"
 SLEEP_TIME=1
+SKIP_DOCKER=0
 
-[[ $EUID -eq 0 ]] || {
-  echo "This script must be run as root." >&2
-  exit 1
-}
+while [[ "$#" -gt 0 ]]; do
+  case $1 in
+  --skip-docker) SKIP_DOCKER=1 ;;
+  *)
+    echo "Unknown parameter: $1" >&2
+    exit 1
+    ;;
+  esac
+  shift
+done
 
 log_message() {
   echo "----------[ $(whoami) $(date) ]---------- $1" >>"${LOG_FILE}"
 }
 
+check_network() {
+  if ! ping -c 1 google.com &>/dev/null; then
+    echo "No network connection. Exiting..." >&2
+    exit 1
+  fi
+}
+
 clean_directory() {
   local dir=$1
   [[ -n "$dir" && -d "$dir" ]] || {
-    echo "Directory ${dir} not found, skipping."
+    echo "Directory ${dir} not found, skipping." >>"${ERROR_LOG}"
     return
   }
   echo "Cleaning $dir..."
   find "${dir}" -mindepth 1 -exec rm -rf {} + 2>/dev/null
-  du -sh "${dir}"
+  du -sh "${dir}" >>"${LOG_FILE}"
   sleep "${SLEEP_TIME}"
 }
 
 apt_operations() {
   log_message "Starting APT operations"
+  check_network
   echo 'Updating package lists...'
-  apt update -y
-  echo 'Upgrading packages...'
-  apt upgrade -y
-  apt full-upgrade -y
+  apt-get update -y
+  apt-get upgrade -y && apt-get full-upgrade -y
   echo 'Removing unused packages...'
-  apt autoremove --purge -y
-  echo 'Cleaning local repository of packages...'
-  apt autoclean
-}
-
-remove_old_kernels() {
-  echo 'Removing old kernels...'
-  apt autoremove --purge -y
-}
-
-remove_old_configs() {
-  echo 'Removing old configuration files...'
-  dpkg -l | grep '^rc' | awk '{print $2}' | xargs -r dpkg --purge
+  apt-get autoremove --purge -y
+  apt-get autoclean
 }
 
 clean_docker() {
-  echo 'Cleaning Docker...'
-  docker system prune -a -f --volumes
+  if [[ "$SKIP_DOCKER" -eq 0 ]]; then
+    if command -v docker &>/dev/null; then
+      echo 'Cleaning Docker...'
+      docker system prune -a -f --volumes
+    else
+      echo "Docker not found, skipping Docker cleanup." >>"${ERROR_LOG}"
+    fi
+  else
+    echo "Skipping Docker cleanup as per user request."
+  fi
 }
 
 clean_journal() {
-  echo 'Cleaning journal logs...'
   journalctl --vacuum-size=50M
 }
 
 clean_systemd_resolved() {
-  echo 'Cleaning systemd-resolved cache...'
   rm -rf /var/cache/systemd/resolved
   systemctl restart systemd-resolved
 }
 
 update_system() {
   apt_operations
-  remove_old_kernels
-  remove_old_configs
-
   clean_directory "${THUMBNAILS_DIR}"
   clean_directory "$REAL_HOME/.cache/thumbnails/normal"
   clean_directory "$REAL_HOME/.local/share/Trash"
 
-  if ! pgrep -x "chrome" >/dev/null; then
-    clean_directory "${CACHE_DIR}"
-  else
-    echo "Google Chrome is running; skipping cache cleanup."
-  fi
+  [[ $(pgrep -x "chrome") ]] || clean_directory "${CACHE_DIR}"
 
-  clean_directory "$REAL_HOME/Downloads"
-  clean_directory "/var/cache/apt/archives"
-  clean_directory "/var/tmp"
-  clean_directory "/var/log"
-  clean_directory "/var/backups"
-  clean_directory "/root/.cache"
+  for dir in "$REAL_HOME/Downloads" "/var/cache/apt/archives" "/var/tmp" "/var/log" "/var/backups" "/root/.cache"; do
+    clean_directory "$dir"
+  done
 
   [[ "$HOME" != "/root" ]] || clean_directory "/root"
 
-  echo 'Fixing broken packages with dpkg...'
   dpkg --configure -a
-  echo 'Cleaning old logs...'
   clean_journal
   clean_docker
   clean_systemd_resolved
-  df -Th | sort
+
+  echo "Disk usage after cleanup:"
+  df -h | sort
 }
 
+exec > >(tee -a "${LOG_FILE}") 2> >(tee -a "${ERROR_LOG}" >&2)
 update_system
