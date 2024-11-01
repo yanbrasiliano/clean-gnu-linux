@@ -95,7 +95,7 @@ update_system() {
 
   [[ $(pgrep -x "chrome") ]] || clean_directory "${CACHE_DIR}"
 
-  for dir in "$REAL_HOME/Downloads" "/var/cache/apt/archives" "/var/tmp" "/var/log" "/var/backups" "/root/.cache"; do
+  for dir in "$REAL_HOME/Downloads" "$REAL_HOME/Pictures/Screenshots" "/var/cache/apt/archives" "/var/tmp" "/var/log" "/var/backups" "/root/.cache"; do
     clean_directory "$dir"
   done
 
