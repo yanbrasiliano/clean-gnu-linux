@@ -512,6 +512,7 @@ show_space_report() {
     echo "====== Space Usage Report ======"
     df -h / /home /var /tmp | column -t
     echo
+    # Uncomment if you  want to see the largest directories in /home and / and sort by size
     # echo "Largest directories:"
     # du -sh /* 2>/dev/null | sort -hr | head -10
     # echo "Space usage by user:"
